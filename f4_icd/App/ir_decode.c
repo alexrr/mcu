@@ -43,7 +43,7 @@ static void IR_RC5_modifyLastBit(tRC5_lastBitType bit);
 static void IR_RC5_WriteBit(uint8_t bitVal);
 static uint32_t TIM_GetCounterCLKValue(void);
 
-static void IR_RC5_DataSampling(uint16_t rawPulseLength, uint8_t edge)
+void IR_RC5_DataSampling(uint16_t rawPulseLength, uint8_t edge)
 {
   uint8_t pulse;
   tRC5_lastBitType tmpLastBit;

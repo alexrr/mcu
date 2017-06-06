@@ -81,6 +81,7 @@ osThreadId Task4UserInputHandle;
 /* Private variables ---------------------------------------------------------*/
 typedef struct {
 	uint32_t ICvalue;
+	uint32_t Delta;
 	uint8_t Channel;
 } TIM_CapValue_TypeDef;
 
@@ -170,6 +171,7 @@ int main(void)
 	ir_htim = &htim2;
 
 	/*##-4- Start the Input Capture in interrupt mode ##########################*/
+
 	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
@@ -664,6 +666,8 @@ static void MX_GPIO_Init(void)
 /* Captured Value */
 __IO uint32_t uwIC1Value = 0;
 __IO uint32_t uwIC2Value = 0;
+__IO uint32_t usysIC1Value = 0;
+__IO uint32_t usysIC2Value = 0;
 /* Duty Cycle Value */
 __IO uint32_t uwDutyCycle = 0;
 /* Frequency Value */
