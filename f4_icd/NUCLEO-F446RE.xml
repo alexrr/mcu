@@ -5,6 +5,6 @@
     <mcuId>stm32f446retx</mcuId>
     <dbgIF>JTAG</dbgIF>
     <dbgIF>SWD</dbgIF>
-    <dbgDEV>ST-Link</dbgDEV>
+    <dbgDEV>ST-LinkV2-1</dbgDEV>
   </board>
 </targetDefinitions>
