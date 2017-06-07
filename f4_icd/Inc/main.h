@@ -76,6 +76,10 @@
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define PCAP2_Pin GPIO_PIN_10
+#define PCAP2_GPIO_Port GPIOC
+#define PCAP1_Pin GPIO_PIN_11
+#define PCAP1_GPIO_Port GPIOC
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 

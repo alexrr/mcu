@@ -45,7 +45,6 @@ typedef enum RC5_lastBitType tRC5_lastBitType;
 
 extern TIM_HandleTypeDef* ir_htim;
 
-
 #define RC5_1T_TIME                          0x00
 #define RC5_2T_TIME                          0x01
 #define RC5_WRONG_TIME                       0xFF

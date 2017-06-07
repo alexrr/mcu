@@ -17,5 +17,9 @@
 #include <string.h>
 #include <stdio.h>
 
+typedef struct {
+	uint32_t ICvalue;
+	uint8_t Channel;
+} TIM_CapValue_TypeDef;
 
 #endif /* PROJECT_DRIVERS_H_ */

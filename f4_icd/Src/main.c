@@ -79,10 +79,6 @@ osThreadId Task4UserInputHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-typedef struct {
-	uint32_t ICvalue;
-	uint8_t Channel;
-} TIM_CapValue_TypeDef;
 
 QueueHandle_t Queue_user_input = NULL;
 QueueHandle_t Queue_motor_cmd = NULL;
@@ -103,6 +99,14 @@ unsigned char bufffer_rx[32];
 uint8_t uart_send = 1;
 uint8_t bufffer_rxi = 0;
 uint8_t bufffer_rx_ready = 0;
+
+
+extern __IO uint32_t uwIC1Value;
+extern __IO uint32_t uwIC2Value;
+/* Duty Cycle Value */
+extern __IO uint32_t uwDutyCycle;
+/* Frequency Value */
+extern __IO uint32_t uwFrequency;
 
 /* USER CODE END PV */
 
@@ -170,6 +174,7 @@ int main(void)
 	ir_htim = &htim2;
 
 	/*##-4- Start the Input Capture in interrupt mode ##########################*/
+	//HAL_TIM_Base_Start_IT(ir_htim);
 	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
@@ -484,7 +489,7 @@ static void MX_TIM2_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
@@ -625,6 +630,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, MOTOR1P1_Pin|MOTOR1P2_Pin|MOTOR2P1_Pin|MOTOR2P2_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, PCAP2_Pin|PCAP1_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -653,6 +661,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PCAP2_Pin PCAP1_Pin */
+  GPIO_InitStruct.Pin = PCAP2_Pin|PCAP1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -661,54 +676,6 @@ static void MX_GPIO_Init(void)
  * @param  htim : TIM IC handle
  * @retval None
  */
-/* Captured Value */
-__IO uint32_t uwIC1Value = 0;
-__IO uint32_t uwIC2Value = 0;
-/* Duty Cycle Value */
-__IO uint32_t uwDutyCycle = 0;
-/* Frequency Value */
-__IO uint32_t uwFrequency = 0;
-TIM_CapValue_TypeDef IC_val;
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-	if (htim->Instance == ir_htim->Instance) {
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			/* Get the Input Capture value */
-			uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-
-			if (uwIC2Value != 0) {
-				/* Duty cycle computation */
-				uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1))
-						* 100) / uwIC2Value;
-
-				/* uwFrequency computation
-				 TIM3 counter clock = (RCC_Clocks.HCLK_Frequency) */
-				uwFrequency = (HAL_RCC_GetHCLKFreq()) / (2 * uwIC2Value);
-
-			} else {
-				uwDutyCycle = 0;
-				uwFrequency = 0;
-			}
-		}
-		if (Queue_ir_cap != NULL) {
-			BaseType_t xHigherPriorityTaskWoken;
-			xHigherPriorityTaskWoken = pdFALSE;
-			IC_val.Channel = htim->Channel;
-			switch (htim->Channel) {
-			case HAL_TIM_ACTIVE_CHANNEL_1:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-				break;
-			case HAL_TIM_ACTIVE_CHANNEL_2:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-				break;
-			default:
-				IC_val.ICvalue = 0;
-			}
-
-			xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-		}
-	}
-}
 
 /* USER CODE END 4 */
 
@@ -889,8 +856,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM10) {
     HAL_IncTick();
   }
-/* USER CODE BEGIN Callback 1 */
 
+/* USER CODE BEGIN Callback 1 */
+  else{
+	  if(htim->Instance == ir_htim->Instance){
+		  HAL_GPIO_TogglePin(PCAP1_GPIO_Port,PCAP1_Pin);
+	  }
+  }
 /* USER CODE END Callback 1 */
 }
 
