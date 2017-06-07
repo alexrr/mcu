@@ -79,6 +79,14 @@ osThreadId Task4UserInputHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+<<<<<<< HEAD
+=======
+typedef struct {
+	uint32_t ICvalue;
+	uint32_t Delta;
+	uint8_t Channel;
+} TIM_CapValue_TypeDef;
+>>>>>>> refs/remotes/origin/master
 
 QueueHandle_t Queue_user_input = NULL;
 QueueHandle_t Queue_motor_cmd = NULL;
@@ -174,7 +182,11 @@ int main(void)
 	ir_htim = &htim2;
 
 	/*##-4- Start the Input Capture in interrupt mode ##########################*/
+<<<<<<< HEAD
 	//HAL_TIM_Base_Start_IT(ir_htim);
+=======
+
+>>>>>>> refs/remotes/origin/master
 	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
@@ -676,6 +688,59 @@ static void MX_GPIO_Init(void)
  * @param  htim : TIM IC handle
  * @retval None
  */
+<<<<<<< HEAD
+=======
+/* Captured Value */
+__IO uint32_t uwIC1Value = 0;
+__IO uint32_t uwIC2Value = 0;
+__IO uint32_t usysIC1Value = 0;
+__IO uint32_t usysIC2Value = 0;
+/* Duty Cycle Value */
+__IO uint32_t uwDutyCycle = 0;
+/* Frequency Value */
+__IO uint32_t uwFrequency = 0;
+TIM_CapValue_TypeDef IC_val;
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == ir_htim->Instance) {
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+			/* Get the Input Capture value */
+			uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+
+			if (uwIC2Value != 0) {
+				/* Duty cycle computation */
+				uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1))
+						* 100) / uwIC2Value;
+
+				/* uwFrequency computation
+				 TIM3 counter clock = (RCC_Clocks.HCLK_Frequency) */
+				uwFrequency = (HAL_RCC_GetHCLKFreq()) / (2 * uwIC2Value);
+
+			} else {
+				uwDutyCycle = 0;
+				uwFrequency = 0;
+			}
+		}
+		if (Queue_ir_cap != NULL) {
+			BaseType_t xHigherPriorityTaskWoken;
+			xHigherPriorityTaskWoken = pdFALSE;
+			IC_val.Channel = htim->Channel;
+			switch (htim->Channel) {
+			case HAL_TIM_ACTIVE_CHANNEL_1:
+				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+				break;
+			case HAL_TIM_ACTIVE_CHANNEL_2:
+				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+				break;
+			default:
+				IC_val.ICvalue = 0;
+			}
+
+			xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
+			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		}
+	}
+}
+>>>>>>> refs/remotes/origin/master
 
 /* USER CODE END 4 */
 
