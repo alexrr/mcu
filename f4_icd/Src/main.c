@@ -79,14 +79,6 @@ osThreadId Task4UserInputHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-<<<<<<< HEAD
-=======
-typedef struct {
-	uint32_t ICvalue;
-	uint32_t Delta;
-	uint8_t Channel;
-} TIM_CapValue_TypeDef;
->>>>>>> refs/remotes/origin/master
 
 QueueHandle_t Queue_user_input = NULL;
 QueueHandle_t Queue_motor_cmd = NULL;
@@ -107,14 +99,6 @@ unsigned char bufffer_rx[32];
 uint8_t uart_send = 1;
 uint8_t bufffer_rxi = 0;
 uint8_t bufffer_rx_ready = 0;
-
-
-extern __IO uint32_t uwIC1Value;
-extern __IO uint32_t uwIC2Value;
-/* Duty Cycle Value */
-extern __IO uint32_t uwDutyCycle;
-/* Frequency Value */
-extern __IO uint32_t uwFrequency;
 
 /* USER CODE END PV */
 
@@ -182,21 +166,6 @@ int main(void)
 	ir_htim = &htim2;
 
 	/*##-4- Start the Input Capture in interrupt mode ##########################*/
-<<<<<<< HEAD
-	//HAL_TIM_Base_Start_IT(ir_htim);
-=======
-
->>>>>>> refs/remotes/origin/master
-	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
-		/* Starting Error */
-		Error_Handler();
-	}
-
-	/*##-5- Start the Input Capture in interrupt mode ##########################*/
-	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_1) != HAL_OK) {
-		/* Starting Error */
-		Error_Handler();
-	}
 
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
 	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
@@ -259,7 +228,7 @@ int main(void)
 	}
 	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
 
-	Queue_ir_cap = xQueueCreate(10, sizeof(TIM_CapValue_TypeDef));
+	Queue_ir_cap = xQueueCreate(24, sizeof(TIM_CapValue_TypeDef));
 	if (Queue_motor_cmd == NULL) {
 		slen = sprintf((char *) str_buf1,
 				"\n\rTim CapVal QueueCreate FAIL!\n\r");
@@ -683,64 +652,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/**
- * @brief  Input Capture callback in non blocking mode
- * @param  htim : TIM IC handle
- * @retval None
- */
-<<<<<<< HEAD
-=======
-/* Captured Value */
-__IO uint32_t uwIC1Value = 0;
-__IO uint32_t uwIC2Value = 0;
-__IO uint32_t usysIC1Value = 0;
-__IO uint32_t usysIC2Value = 0;
-/* Duty Cycle Value */
-__IO uint32_t uwDutyCycle = 0;
-/* Frequency Value */
-__IO uint32_t uwFrequency = 0;
-TIM_CapValue_TypeDef IC_val;
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-	if (htim->Instance == ir_htim->Instance) {
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			/* Get the Input Capture value */
-			uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-
-			if (uwIC2Value != 0) {
-				/* Duty cycle computation */
-				uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1))
-						* 100) / uwIC2Value;
-
-				/* uwFrequency computation
-				 TIM3 counter clock = (RCC_Clocks.HCLK_Frequency) */
-				uwFrequency = (HAL_RCC_GetHCLKFreq()) / (2 * uwIC2Value);
-
-			} else {
-				uwDutyCycle = 0;
-				uwFrequency = 0;
-			}
-		}
-		if (Queue_ir_cap != NULL) {
-			BaseType_t xHigherPriorityTaskWoken;
-			xHigherPriorityTaskWoken = pdFALSE;
-			IC_val.Channel = htim->Channel;
-			switch (htim->Channel) {
-			case HAL_TIM_ACTIVE_CHANNEL_1:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-				break;
-			case HAL_TIM_ACTIVE_CHANNEL_2:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-				break;
-			default:
-				IC_val.ICvalue = 0;
-			}
-
-			xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-		}
-	}
-}
->>>>>>> refs/remotes/origin/master
 
 /* USER CODE END 4 */
 
@@ -751,18 +662,20 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
-	int len;
+	//int len;
 	int count = 0;
 	/* Infinite loop */
 	for (;;) {
 		LCD_SetPos(0, 0);
 		LCD_SendChar(count + 48);
 
-		len = GetShortState(0, str_buf2);
+		//len =
+				GetShortState(0, (uint8_t*)str_buf2);
 		LCD_SetPos(1, 0);
 		LCD_String((uint8_t*) str_buf2);
 
-		len = GetShortState(1, str_buf2);
+		//len =
+				GetShortState(1, (uint8_t*)str_buf2);
 //		sprintf(str_buf2, "1234567 test1");
 		LCD_SetPos(1, 1);
 		LCD_String((uint8_t*) str_buf2);
@@ -782,7 +695,7 @@ void StartTask02(void const * argument)
   /* USER CODE BEGIN StartTask02 */
 	/* Infinite loop */
 	uint16_t l;
-	uint32_t next_cmd = 0;
+	//uint32_t next_cmd = 0;
 	BaseType_t xStatus;
 	TIM_CapValue_TypeDef ic_val;
 	ExecMotorCmd(mask_MOTOR1 | DIR_MOTOR_FORWARD | 44);
@@ -801,9 +714,8 @@ void StartTask02(void const * argument)
 		if (Queue_ir_cap != NULL) {
 			while ((xStatus = xQueueReceive(Queue_ir_cap, &ic_val,
 					portMAX_DELAY)) == pdPASS) {
-				l = sprintf((char*) str_buf1, "\n\rIC_Cap:%x %x f=%d dc=%d",
-						ic_val.Channel, ic_val.ICvalue, uwFrequency,
-						uwDutyCycle);
+				l = sprintf((char*) str_buf1, "\n\rIC_Cap: ch=%ud val=%lud c1=%lud c2=%lud",
+						ic_val.Channel, ic_val.ICvalue, ic_val.CR1, ic_val.CR2);
 				HAL_UART_Transmit_IT(&huart1, str_buf1, l);
 				osDelay(2);
 			}
@@ -842,7 +754,7 @@ void StartTask03(void const * argument)
 			len = sprintf(str1, "\n\r%2d:%2d:%2d S1 = %d  %2d:%2d:%2d\n\r",
 					dtime_n.Hours, dtime_n.Minutes, dtime_n.Seconds, ps_new,
 					dtime_d.Hours, dtime_d.Minutes, dtime_d.Seconds);
-			HAL_UART_Transmit(&huart1, str1, len, 0xff);
+			HAL_UART_Transmit(&huart1, (uint8_t*)str1, len, 0xff);
 			ps_old = ps_new;
 			dtime_o = dtime_n;
 		}
@@ -923,11 +835,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
 
 /* USER CODE BEGIN Callback 1 */
-  else{
-	  if(htim->Instance == ir_htim->Instance){
-		  HAL_GPIO_TogglePin(PCAP1_GPIO_Port,PCAP1_Pin);
-	  }
-  }
+//  else{
+//	  if(htim->Instance == ir_htim->Instance){
+//		  HAL_GPIO_TogglePin(PCAP1_GPIO_Port,PCAP1_Pin);
+//	  }
+//  }
 /* USER CODE END Callback 1 */
 }
 

@@ -99,7 +99,7 @@ uint32_t ParseControlCmd(const char *cmd_str,
 	end: return cmd;
 }
 
-uint16_t GetShortState(uint8_t i,char *str){
+uint16_t GetShortState(uint8_t i,uint8_t *str){
 	uint8_t p1 = HAL_GPIO_ReadPin(MotorCtrl[i].GPIO_Forward,
 			MotorCtrl[i].PinForward);
 	uint8_t p2 = HAL_GPIO_ReadPin(MotorCtrl[i].GPIO_Backward,
@@ -109,7 +109,7 @@ uint16_t GetShortState(uint8_t i,char *str){
 	if(arr>1){
 		speed = speed*100.0 / arr;
 	}
-	return sprintf(str,"M%1u F%1u B%1u S%3u",i+1,p1,p2,speed);
+	return (uint16_t)sprintf((char*)str,"M%1u F%1u B%1u S%3u",i+1,p1,p2,speed);
 }
 
 void PrintMotorPinAll(UART_HandleTypeDef *huart) {

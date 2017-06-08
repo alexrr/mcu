@@ -12,4 +12,8 @@
 #include "semphr.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_rtc.h"
+
+extern QueueHandle_t Queue_user_input;
+extern QueueHandle_t Queue_ir_cap;
+
 #endif /* PROJECT_LIB_H_ */

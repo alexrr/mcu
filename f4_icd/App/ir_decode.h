@@ -43,7 +43,19 @@ enum RC5_lastBitType
 
 typedef enum RC5_lastBitType tRC5_lastBitType;
 
+typedef struct {
+	uint32_t ICvalue;
+	uint32_t CR1;
+	uint32_t CR2;
+	uint8_t Channel;
+} TIM_CapValue_TypeDef;
+
 extern TIM_HandleTypeDef* ir_htim;
+
+void IR_RC5_ResetPacket(void);
+void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim);
+void TIMx_IRQHandler_irdecode(TIM_HandleTypeDef *htim);
+
 
 #define RC5_1T_TIME                          0x00
 #define RC5_2T_TIME                          0x01

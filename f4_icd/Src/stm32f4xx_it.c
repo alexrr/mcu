@@ -38,8 +38,6 @@
 
 /* USER CODE BEGIN 0 */
 #include "../App/Project_Includes.h"
-extern QueueHandle_t Queue_user_input;
-extern QueueHandle_t Queue_ir_cap;
 static uint8_t USART2_IRQHandler_buf[2];
 /* USER CODE END 0 */
 
@@ -150,28 +148,13 @@ void OTG_FS_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
-/* Captured Value */
-__IO uint32_t uwIC1Value = 0;
-__IO uint32_t uwIC2Value = 0;
-/* Duty Cycle Value */
-__IO uint32_t uwDutyCycle = 0;
-/* Frequency Value */
-__IO uint32_t uwFrequency = 0;
-TIM_CapValue_TypeDef IC_val;
-
 /**
 * @brief This function handles TIM2 global interrupt.
 */
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-  if(__HAL_TIM_GET_FLAG(&htim2,TIM_FLAG_CC1)!=RESET){
-		HAL_GPIO_WritePin(PCAP1_GPIO_Port,PCAP1_Pin,1);
-		uwIC1Value = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
-  }
-  if(__HAL_TIM_GET_FLAG(&htim2,TIM_FLAG_CC2)!=RESET){
-
-  }
+  TIMx_IRQHandler_irdecode(&htim2);
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
@@ -179,52 +162,7 @@ void TIM2_IRQHandler(void)
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-	if (htim->Instance == ir_htim->Instance) {
-//		if((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2)==)0&(HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)==0)){
-//			HAL_GPIO_TogglePin(PCAP1_GPIO_Port,PCAP1_Pin);
-//		}
-		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1){
-			HAL_GPIO_WritePin(PCAP1_GPIO_Port,PCAP1_Pin,1);
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			/* Get the Input Capture value */
-			HAL_GPIO_WritePin(PCAP1_GPIO_Port,PCAP1_Pin,0);
-			uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-
-			if (uwIC2Value != 0) {
-				/* Duty cycle computation */
-				uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1))
-						* 100) / uwIC2Value;
-
-				/* uwFrequency computation
-				 TIM3 counter clock = (RCC_Clocks.HCLK_Frequency) */
-				uwFrequency = uwIC2Value - HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-
-			} else {
-				uwDutyCycle = 0;
-				uwFrequency = 0;
-			}
-		}
-
-		if (Queue_ir_cap != NULL) {
-			BaseType_t xHigherPriorityTaskWoken;
-			xHigherPriorityTaskWoken = pdFALSE;
-			IC_val.Channel = htim->Channel;
-			switch (htim->Channel) {
-			case HAL_TIM_ACTIVE_CHANNEL_1:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-				break;
-			case HAL_TIM_ACTIVE_CHANNEL_2:
-				IC_val.ICvalue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-				break;
-			default:
-				IC_val.ICvalue = 0;
-			}
-
-			xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-		}
-	}
+	TIMx_IRQHandler_irdecode(htim);
 }
 
 /* USER CODE END 1 */

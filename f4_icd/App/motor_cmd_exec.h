@@ -35,7 +35,7 @@ uint16_t GetTimPWM_CCR(TIM_TypeDef *_tim,uint8_t _ccx);
 void Start_PWM(TIM_HandleTypeDef *_tim, uint8_t _ccx);
 void ErrorCMD(UART_HandleTypeDef *huart, uint16_t ErrorCode,uint16_t chr);
 void ExecMotorCmd(uint32_t m_cmd);
-uint16_t GetShortState(uint8_t i,char *str);
+uint16_t GetShortState(uint8_t i,uint8_t *str);
 
 //----------------------
 typedef struct
