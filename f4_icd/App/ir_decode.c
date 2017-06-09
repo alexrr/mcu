@@ -279,9 +279,12 @@ void TIMx_IRQHandler_irdecode(TIM_HandleTypeDef *htim) {
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	} else {
 		__HAL_TIM_CLEAR_FLAG(ir_htim, TIM_FLAG_UPDATE);
-		IR_RC5_ResetPacket();
-		xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
-		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		if(RC5TmpPacket.status!=RC5_PACKET_STATUS_EMPTY){
+			IR_RC5_ResetPacket();
+			IC_val.Channel = 0xff;
+			xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
+			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		}
 	}
 
 //	if (Queue_ir_cap != NULL) {
@@ -418,30 +421,49 @@ void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim) {
 //  /* Set the LCD Text Color */
 //  LCD_SetTextColor(LCD_COLOR_WHITE);
 #endif
+	HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+	uint8_t* pstr=LogOut("\n\r#RC5 init");
+
 	ir_htim = _ir_htim;
 
 	//TIMCLKValueKHz = HAL_RCC_GetHCLKFreq() / 1000;
     TIMCLKValueKHz = TIM_GetCounterCLKValue()/1000;
 
-	RC5TimeOut = TIMCLKValueKHz * RC5_TIME_OUT_US / 1000;
-	ir_htim->Instance->ARR = RC5TimeOut;
+    RC5TimeOut = TIMCLKValueKHz * RC5_TIME_OUT_US / 1000;
+
+	ir_htim->Instance->ARR = RC5TimeOut*1000;
 	/* Bit time range */
 	RC5MinT = (RC5_T_US - RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5MaxT = (RC5_T_US + RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5Min2T = (2 * RC5_T_US - RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5Max2T = (2 * RC5_T_US + RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 
-	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
+    LogOut("\n\r RC5TimeOut=%d\n\r RC5MinT=%d RC5MaxT=%d\n\r RC5Min2T=%d  RC5Max2T=%d",RC5TimeOut,RC5MinT,RC5MaxT,RC5Min2T,RC5Max2T);
+
+	__HAL_TIM_CLEAR_FLAG(ir_htim, TIM_FLAG_UPDATE);
+	if (HAL_TIM_Base_Start_IT(ir_htim) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
 	}
 
-	/*##-5- Start the Input Capture in interrupt mode ##########################*/
+
+    if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
+		/* Starting Error */
+		Error_Handler();
+	}
+
+    /*##-5- Start the Input Capture in interrupt mode ##########################*/
 	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_1) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
 	}
 
 	/* Default state */
-	IR_RC5_ResetPacket();
+
+    IR_RC5_ResetPacket();
+	osDelay(100);
+
+    LogOut("\n\rRC5 init complite");
+
+    HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
 }

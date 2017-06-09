@@ -1,44 +1,40 @@
 #include "motor_cmd_exec.h"
 #include <string.h>
 char __promt[10] = "\n\rhi>\0x0";
-char pbuf[50];
 uint32_t Motors_mask[4] = { mask_MOTOR1, mask_MOTOR2, mask_MOTOR3, mask_MOTOR4 };
 MotorControl_TypeDef MotorCtrl[4];
 
-void PrintPromtUART(UART_HandleTypeDef *huart) {
-	HAL_UART_Transmit_IT(huart, (uint8_t *) __promt, strlen(__promt));
+void PrintPromt() {
+	LogOutFix((uint8_t *) __promt, strlen(__promt));
 }
 
-uint32_t ParseControlCmd(const char *cmd_str,
-		UART_HandleTypeDef *huart) {
+uint32_t ParseControlCmd(const char *cmd_str) {
 	int l;
 	uint32_t cmd = 0;
 	if (cmd_str[0] == 'P') {
 		switch (cmd_str[1]) {
 		case 'A':
-			PrintMotorPinAll(huart);
-			PrintTimBaseAll(huart);
+			PrintMotorPinAll();
+			PrintTimBaseAll();
 			break;
 		case '1':
-			PrintMotorPinP1(huart);
-			PrintTimBaseP1(huart);
+			PrintMotorPinP1();
+			PrintTimBaseP1();
 			break;
 		case '2':
-			PrintMotorPinP2(huart);
-			PrintTimBaseP2(huart);
+			PrintMotorPinP2();
+			PrintTimBaseP2();
 			break;
 		default:
-			l = sprintf(pbuf, "\n\r_cmd err");
-			HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
-			PrintMotorPinP1(huart);
-			PrintTimBaseP1(huart);
+			LogOut("\n\r_cmd err");
+			PrintMotorPinP1();
+			PrintTimBaseP1();
 			break;
 		}
 		goto end;
 	}
 	if (cmd_str[0] == 'M') {
-		l = sprintf(pbuf, "\n\r decode char %x, %lx", cmd_str[1], cmd);
-		HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+		LogOut("\n\r decode char %x, %lx", cmd_str[1], cmd);
 
 		if (cmd_str[1] == 'A') {
 			cmd |= (mask_MOTOR1 | mask_MOTOR2 | mask_MOTOR3 | mask_MOTOR4);
@@ -47,26 +43,22 @@ uint32_t ParseControlCmd(const char *cmd_str,
 				cmd |= Motors_mask[cmd_str[1] - 0x31];
 			} else {
 				cmd = 0;
-				ErrorCMD(huart, 1, cmd_str[1]);
+				ErrorCMD(1, cmd_str[1]);
 			}
 		}
 
 		switch (cmd_str[2]) {
 		case 'F':
 			cmd |= DIR_MOTOR_FORWARD;
-			l = sprintf(pbuf, "\n\r %x DIR_MOTOR_FORWARD, %lx", cmd_str[2],
-					cmd);
-			HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+			LogOut("\n\r %x DIR_MOTOR_FORWARD, %lx", cmd_str[2],cmd);
 			break;
 		case 'B':
 			cmd |= DIR_MOTOR_BACKWARD;
-			l = sprintf(pbuf, "\n\r %x DIR_MOTOR_BACKWARD, %lx", cmd_str[2],
-					cmd);
-			HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+			LogOut("\n\r %x DIR_MOTOR_BACKWARD, %lx", cmd_str[2],cmd);
 			break;
 		default:
 			cmd = 0;
-			ErrorCMD(huart, 2, cmd_str[2]);
+			ErrorCMD(2, cmd_str[2]);
 			goto end;
 		}
 		uint8_t ib;
@@ -79,22 +71,19 @@ uint32_t ParseControlCmd(const char *cmd_str,
 		}
 		if (ib < 4) {
 			cmd = 0;
-			ErrorCMD(huart, 3, cmd_str[ib]);
+			ErrorCMD(3, cmd_str[ib]);
 			goto end;
 		}
 		speed = MOTOR_SPEED_MASK & speed;
-		l = sprintf(pbuf, "\n\r_speed=%lu", speed);
-		HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+		LogOut("\n\r_speed=%lu", speed);
 
 		cmd |= speed;
 
-		l = sprintf(pbuf, "\n\r return cmd=%lX", cmd);
-		HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+		LogOut("\n\r return cmd=%lX", cmd);
 	} else {
-		l = sprintf(pbuf, "\n\r_def cmd");
-		HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
-		PrintTimBaseP1(huart);
-		PrintMotorPinP1(huart);
+		LogOut("\n\r_def cmd");
+		PrintTimBaseP1();
+		PrintMotorPinP1();
 	}
 	end: return cmd;
 }
@@ -112,59 +101,55 @@ uint16_t GetShortState(uint8_t i,uint8_t *str){
 	return (uint16_t)sprintf((char*)str,"M%1u F%1u B%1u S%3u",i+1,p1,p2,speed);
 }
 
-void PrintMotorPinAll(UART_HandleTypeDef *huart) {
-	PrintMotorPinP1(huart);
-	PrintMotorPinP2(huart);
+void PrintMotorPinAll() {
+	PrintMotorPinP1();
+	PrintMotorPinP2();
 }
 
-void PrintMotorPinIdx(uint8_t i,UART_HandleTypeDef *huart) {
+void PrintMotorPinIdx(uint8_t i) {
 	int l;
 	uint8_t p1 = HAL_GPIO_ReadPin(MotorCtrl[i].GPIO_Forward,
 			MotorCtrl[i].PinForward);
 	uint8_t p2 = HAL_GPIO_ReadPin(MotorCtrl[i].GPIO_Backward,
 			MotorCtrl[i].PinBackward);
-	l = sprintf(pbuf, "\n\rM%1d_F=%u \t M%1d_B=%u",i+1, p1, i+1, p2);
-	HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+	LogOut("\n\rM%1d_F=%u \t M%1d_B=%u",i+1, p1, i+1, p2);
 }
-void PrintMotorPinP1(UART_HandleTypeDef *huart) {
-	PrintMotorPinIdx(0,huart);
-	PrintMotorPinIdx(1,huart);
+void PrintMotorPinP1() {
+	PrintMotorPinIdx(0);
+	PrintMotorPinIdx(1);
 }
-void PrintMotorPinP2(UART_HandleTypeDef *huart) {
-	PrintMotorPinIdx(2,huart);
-	PrintMotorPinIdx(3,huart);
+void PrintMotorPinP2() {
+	PrintMotorPinIdx(2);
+	PrintMotorPinIdx(3);
 }
 
-void PrintTimBaseAll(UART_HandleTypeDef *huart) {
+void PrintTimBaseAll() {
 	for (uint8_t i = 0; i < 4; i++) {
-		PrintTimBase1(i, huart);
+		PrintTimBase1(i);
 	}
 }
 
-void PrintTimBaseP1(UART_HandleTypeDef *huart) {
-	PrintTimBase1(0, huart);
-	PrintTimBase1(1, huart);
+void PrintTimBaseP1() {
+	PrintTimBase1(0);
+	PrintTimBase1(1);
 }
-void PrintTimBaseP2(UART_HandleTypeDef *huart) {
-	PrintTimBase1(2, huart);
-	PrintTimBase1(3, huart);
+void PrintTimBaseP2() {
+	PrintTimBase1(2);
+	PrintTimBase1(3);
 }
 
-void PrintTimBase1(uint8_t i, UART_HandleTypeDef *huart) {
+void PrintTimBase1(uint8_t i) {
 	uint32_t arr, psc;
 	uint32_t ccr_ctrl;
 	arr = MotorCtrl[i].tim->Instance->ARR;
 	psc = MotorCtrl[i].tim->Instance->PSC;
 	ccr_ctrl = GetTimPWM_CCR(MotorCtrl[i].tim->Instance, MotorCtrl[i].ctrl_CCx);
-	int l;
-	l = sprintf(pbuf, "\n\rM%1u ARR=%lu PSC=%lu CC=%lu", i+1, arr, psc, ccr_ctrl);
-	HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+	LogOut("\n\rM%1u ARR=%lu PSC=%lu CC=%lu", i+1, arr, psc, ccr_ctrl);
 }
 
-void ErrorCMD(UART_HandleTypeDef *huart, uint16_t ErrorCode, uint16_t chr) {
+void ErrorCMD(uint16_t ErrorCode, uint16_t chr) {
 	int l;
-	l = sprintf(pbuf, "\n\rError decode command:%X %x", ErrorCode, chr);
-	HAL_UART_Transmit(huart, (uint8_t *) pbuf, l, 0x5f);
+	LogOut("\n\rError decode command:%X %x", ErrorCode, chr);
 }
 
 void PrepareMotorCtrl(uint8_t m_idx, GPIO_TypeDef *_GPIO_Forward,

@@ -56,6 +56,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "../App/Project_Includes.h"
+#include "../App/Project_Lib.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -83,7 +84,6 @@ osThreadId Task4UserInputHandle;
 QueueHandle_t Queue_user_input = NULL;
 QueueHandle_t Queue_motor_cmd = NULL;
 QueueHandle_t Queue_ir_cap = NULL;
-unsigned char str_buf1[50];
 unsigned char str_buf2[50];
 unsigned char str_uartt_tx2[16] = "XUART2 OK\t";
 unsigned char str_uartt_tx3[16] = "\r\ncmd ok\n\r";
@@ -163,26 +163,17 @@ int main(void)
   MX_TIM4_Init();
 
   /* USER CODE BEGIN 2 */
-	ir_htim = &htim2;
-
 	/*##-4- Start the Input Capture in interrupt mode ##########################*/
 
-	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	HAL_UART_Transmit(&huart1, (uint8_t *) str_uartt_tx2, str_uartt_tx2_len,
-			0xef);
+	InitLogDev(&huart1);
+  	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	LogOut(str_uartt_tx2);
 	str_uartt_tx2[0] = 0x40;
 	LCD_ini(&hi2c1, LCD_adr);
-	uint16_t slen = sprintf((char *) str_buf1, "LCD init %x, result=%d\n\r",
-			LCD_handler.I2C_address, LCD_handler._LCD_last_status);
-	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
+	LogOut((uint8_t*)"LCD init %x, result=%d\n\r",LCD_handler.I2C_address, LCD_handler._LCD_last_status);
 	LCD_Clear();
 	LCD_SetPos(0, 0);
 	LCD_String(str_lcd_t);
-	str_lcd_t[0]++;
-	slen = sprintf((char *) str_buf1, "LCD send string %x, result=%d\n\r",
-			LCD_handler.I2C_address, LCD_handler._LCD_last_status);
-	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
 
 	motor_tim = &htim3;
 
@@ -205,6 +196,8 @@ int main(void)
 	LCD_String(str_lcd_t);
 	str_lcd_t[0]++;
 //  osDelay(100);
+	HAL_GPIO_WritePin(PCAP1_GPIO_Port, PCAP1_Pin,GPIO_PIN_SET);
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -213,34 +206,31 @@ int main(void)
 	osDelay(100);
 	Queue_user_input = xQueueCreate(10, sizeof(uint8_t));
 	if (Queue_user_input == NULL) {
-		slen = sprintf((char *) str_buf1,
-				"\n\rxUser input QueueCreate FAIL!\n\r");
+		LogOut("\n\rxUser input QueueCreate FAIL!\n\r");
 	} else {
-		slen = sprintf((char *) str_buf1, "\n\rxUser input QueueCreate OK\n\r");
+		LogOut("\n\rxUser input QueueCreate OK\n\r");
 	}
-	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
 	Queue_motor_cmd = xQueueCreate(10, sizeof(uint32_t));
 	if (Queue_motor_cmd == NULL) {
-		slen = sprintf((char *) str_buf1,
-				"\n\rxMotor cmd QueueCreate FAIL!\n\r");
+		LogOut("\n\rxMotor cmd QueueCreate FAIL!\n\r");
 	} else {
-		slen = sprintf((char *) str_buf1, "\n\rxMotor cmd QueueCreate OK\n\r");
+		LogOut("\n\rxMotor cmd QueueCreate OK\n\r");
 	}
-	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
 
 	Queue_ir_cap = xQueueCreate(24, sizeof(TIM_CapValue_TypeDef));
 	if (Queue_motor_cmd == NULL) {
-		slen = sprintf((char *) str_buf1,
-				"\n\rTim CapVal QueueCreate FAIL!\n\r");
+		LogOut("\n\rTim CapVal QueueCreate FAIL!\n\r");
 	} else {
-		slen = sprintf((char *) str_buf1, "\n\rTim CapVal  QueueCreate OK\n\r");
+		LogOut("\n\rTim CapVal  QueueCreate OK\n\r");
 	}
-
-	HAL_UART_Transmit(&huart1, str_buf1, slen, 0xff);
 	LCD_String(str_lcd_t);
 	str_lcd_t[0]++;
 	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-  /* USER CODE END RTOS_MUTEX */
+
+	ir_htim = &htim2;
+	IR_RC5_Init(&htim2);
+
+	/* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
@@ -606,19 +596,26 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, PCAP1_Pin|PCAP2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, MOTOR1P1_Pin|MOTOR1P2_Pin|MOTOR2P1_Pin|MOTOR2P2_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, PCAP2_Pin|PCAP1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PCAP1_Pin PCAP2_Pin */
+  GPIO_InitStruct.Pin = PCAP1_Pin|PCAP2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : USART_TX_Pin USART_RX_Pin */
   GPIO_InitStruct.Pin = USART_TX_Pin|USART_RX_Pin;
@@ -641,13 +638,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PCAP2_Pin PCAP1_Pin */
-  GPIO_InitStruct.Pin = PCAP2_Pin|PCAP1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 }
 
@@ -694,7 +684,6 @@ void StartTask02(void const * argument)
 {
   /* USER CODE BEGIN StartTask02 */
 	/* Infinite loop */
-	uint16_t l;
 	//uint32_t next_cmd = 0;
 	BaseType_t xStatus;
 	TIM_CapValue_TypeDef ic_val;
@@ -714,9 +703,8 @@ void StartTask02(void const * argument)
 		if (Queue_ir_cap != NULL) {
 			while ((xStatus = xQueueReceive(Queue_ir_cap, &ic_val,
 					portMAX_DELAY)) == pdPASS) {
-				l = sprintf((char*) str_buf1, "\n\rIC_Cap: ch=%ud val=%lud c1=%lud c2=%lud",
+				LogOut("\n\rIC_Cap: ch=%u val=%lu c1=%lu c2=%lu",
 						ic_val.Channel, ic_val.ICvalue, ic_val.CR1, ic_val.CR2);
-				HAL_UART_Transmit_IT(&huart1, str_buf1, l);
 				osDelay(2);
 			}
 //			if (xStatus == pdPASS) {
@@ -733,8 +721,6 @@ void StartTask03(void const * argument)
 {
   /* USER CODE BEGIN StartTask03 */
 	/* Infinite loop */
-	int len;
-	char str1[30];
 	GPIO_PinState ps_old, ps_new;
 	ps_old = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11);
 	RTC_TimeTypeDef dtime_o;
@@ -751,10 +737,9 @@ void StartTask03(void const * argument)
 			HAL_RTC_GetTime(&hrtc, &dtime_n, RTC_FORMAT_BIN);
 			DeltaTime(&dtime_o, &dtime_n, &dtime_d);
 
-			len = sprintf(str1, "\n\r%2d:%2d:%2d S1 = %d  %2d:%2d:%2d\n\r",
+			LogOut("\n\r%2d:%2d:%2d S1 = %d  %2d:%2d:%2d\n\r",
 					dtime_n.Hours, dtime_n.Minutes, dtime_n.Seconds, ps_new,
 					dtime_d.Hours, dtime_d.Minutes, dtime_d.Seconds);
-			HAL_UART_Transmit(&huart1, (uint8_t*)str1, len, 0xff);
 			ps_old = ps_new;
 			dtime_o = dtime_n;
 		}
@@ -770,7 +755,6 @@ void StartTask4UserInput(void const * argument)
 	/* Infinite loop */
 	uint8_t next_ch[3] = "$$";
 	next_ch[2] = 0x0;
-	int len = 0;
 	uint32_t next_cmd;
 	/* Infinite loop */
 	osDelay(1000);
@@ -780,36 +764,33 @@ void StartTask4UserInput(void const * argument)
 			xQueueReceive(Queue_user_input, next_ch, portMAX_DELAY);
 			if (next_ch[0] < 0x20 || next_ch[0] > 0x7F) {
 				uart_send = 0;
-				len = sprintf((char*) str_buf1, "[c:%x]", next_ch[0]);
-				HAL_UART_Transmit(&huart1, str_buf1, len, 0xff);
+
+				LogOut("[c:%x]", next_ch[0]);
+
 				if (next_ch[0] == 0xa || next_ch[0] == 0xd
 						|| next_ch[0] == 0xc) {
 					bufffer_rx[bufffer_rxi++] = 0x0;
-					HAL_UART_Transmit(&huart1, (uint8_t *) str_uartt_tx3,
-							str_uartt_tx3_len, 0xff);
-					next_cmd = ParseControlCmd((const char *) bufffer_rx,
-							&huart1);
+					LogOutFix(str_uartt_tx3, str_uartt_tx3_len);
+					next_cmd = ParseControlCmd((const char *) bufffer_rx);
 					bufffer_rxi = 0;
 					if (next_cmd > 0) {
 						ExecMotorCmd(next_cmd);
 						PrintMotorPinP1(&huart1);
 						PrintTimBaseP1(&huart1);
 					}
-					PrintPromtUART(&huart1);
+					PrintPromt();
 				}
 				uart_send = 1;
 			} else {
 				next_ch[0] = toupper(next_ch[0]);
-				HAL_UART_Transmit_IT(&huart1, next_ch, 1);
+				LogOutCh(next_ch[0]);
 				if (bufffer_rxi < 80) {
 					bufffer_rx[bufffer_rxi++] = next_ch[0];
 				}
 			}
 		} else {
 			osDelay(4000);
-			uint8_t l = sprintf((char *) str_buf1,
-					"\n\r Error: Queue in NULL\n\r");
-			HAL_UART_Transmit_IT(&huart1, str_buf1, l);
+			LogOut("\n\r Error: Queue in NULL\n\r");
 			osDelay(4000);
 		}
 		osDelay(1);
@@ -833,7 +814,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM10) {
     HAL_IncTick();
   }
-
 /* USER CODE BEGIN Callback 1 */
 //  else{
 //	  if(htim->Instance == ir_htim->Instance){

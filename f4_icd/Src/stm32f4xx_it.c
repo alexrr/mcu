@@ -88,6 +88,19 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
 
+/**
+* @brief This function handles TIM2 global interrupt.
+*/
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+  HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+  TIMx_IRQHandler_irdecode(&htim2);
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+  /* USER CODE END TIM2_IRQn 1 */
+}
 
 /**
 * @brief This function handles I2C1 event interrupt.
@@ -109,10 +122,6 @@ void I2C1_EV_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-//  for(int i=0;i<7;i++){
-//	  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
-//	  HAL_Delay(20);
-//  }
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
@@ -121,7 +130,6 @@ void USART1_IRQHandler(void)
 	HAL_StatusTypeDef res = HAL_UART_Receive_IT(&huart1, USART2_IRQHandler_buf,
 			1);
 
-//	HAL_UART_Transmit_IT(&huart1, USART2_IRQHandler_buf, 1);
 	if (res == HAL_OK) {
 		if (Queue_user_input != NULL) {
 			xQueueSendFromISR(Queue_user_input, USART2_IRQHandler_buf,
@@ -151,18 +159,25 @@ void OTG_FS_IRQHandler(void)
 /**
 * @brief This function handles TIM2 global interrupt.
 */
-void TIM2_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM2_IRQn 0 */
-  TIMx_IRQHandler_irdecode(&htim2);
-  /* USER CODE END TIM2_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim2);
-  /* USER CODE BEGIN TIM2_IRQn 1 */
-  /* USER CODE END TIM2_IRQn 1 */
-}
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-	TIMx_IRQHandler_irdecode(htim);
+   HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+   TIMx_IRQHandler_irdecode(htim);
+}
+
+/**
+* @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
+*/
+void TIM2_UP_TIM10_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
+  HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+  TIMx_IRQHandler_irdecode(&htim2);
+  /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim10);
+  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
+
+  /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
 
 /* USER CODE END 1 */

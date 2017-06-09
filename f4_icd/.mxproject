@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=N:/MCU/workspace_f446/f4_icd/Inc
+HeaderPath=D:/Files/GitHub/mcu/f4_icd/Inc
 HeaderFiles=FreeRTOSConfig.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=N:/MCU/workspace_f446/f4_icd/Src
+SourcePath=D:/Files/GitHub/mcu/f4_icd/Src
 SourceFiles=FreeRTOSConfig.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;freertos.c;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_cdc_if.c;stm32f4xx_it.c;stm32f4xx_hal_msp.c;stm32f4xx_hal_timebase_TIM.c;main.c;
 
 [PreviousLibFiles]

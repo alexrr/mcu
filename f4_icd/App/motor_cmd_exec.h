@@ -19,21 +19,21 @@
 
 
 extern uint32_t Motors_mask[4];
-void PrintPromtUART(UART_HandleTypeDef *huart);
-void PrintMotorPinAll(UART_HandleTypeDef *huart);
-void PrintMotorPinP1(UART_HandleTypeDef *huart);
-void PrintMotorPinP2(UART_HandleTypeDef *huart);
-void PrintMotorPinIdx(uint8_t i,UART_HandleTypeDef *huart);
-void PrintTimBaseAll(UART_HandleTypeDef *huart);
-void PrintTimBaseP1(UART_HandleTypeDef *huart);
-void PrintTimBaseP2(UART_HandleTypeDef *huart);
-void PrintTimBase1(uint8_t i,UART_HandleTypeDef *huart);
-uint32_t ParseControlCmd(const char *cmd_str,UART_HandleTypeDef *huart);
+void PrintPromt();
+void PrintMotorPinAll();
+void PrintMotorPinP1();
+void PrintMotorPinP2();
+void PrintMotorPinIdx(uint8_t i);
+void PrintTimBaseAll();
+void PrintTimBaseP1();
+void PrintTimBaseP2();
+void PrintTimBase1(uint8_t i);
+uint32_t ParseControlCmd(const char *cmd_str);
 void PrepareMotorCtrl(uint8_t m_idx,GPIO_TypeDef *_GPIO_Forward,GPIO_TypeDef *_GPIO_Backward,uint16_t  _PinForward,uint16_t  _PinBackward,TIM_HandleTypeDef *_tim,uint8_t _ctrl_CCx,uint16_t  _MaxPWM_value);
 void SetTimPWM_CCR(TIM_TypeDef *_tim,uint8_t _ccx,uint16_t value);
 uint16_t GetTimPWM_CCR(TIM_TypeDef *_tim,uint8_t _ccx);
 void Start_PWM(TIM_HandleTypeDef *_tim, uint8_t _ccx);
-void ErrorCMD(UART_HandleTypeDef *huart, uint16_t ErrorCode,uint16_t chr);
+void ErrorCMD(uint16_t ErrorCode,uint16_t chr);
 void ExecMotorCmd(uint32_t m_cmd);
 uint16_t GetShortState(uint8_t i,uint8_t *str);
 
