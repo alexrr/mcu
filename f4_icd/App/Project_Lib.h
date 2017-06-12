@@ -10,12 +10,7 @@
 #include "FreeRTOS.H"
 #include "task.h"
 #include "semphr.h"
-#include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_rtc.h"
-
-extern QueueHandle_t Queue_user_input;
-extern QueueHandle_t Queue_ir_cap;
-
+#include "Project_HAL.h"
 
 void SetLogDev();
 void InitLogDev(UART_HandleTypeDef* new_log_h);

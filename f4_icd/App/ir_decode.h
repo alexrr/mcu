@@ -51,6 +51,7 @@ typedef struct {
 } TIM_CapValue_TypeDef;
 
 extern TIM_HandleTypeDef* ir_htim;
+extern __IO uint8_t irq_src;
 
 void IR_RC5_ResetPacket(void);
 void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim);

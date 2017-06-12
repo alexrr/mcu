@@ -37,13 +37,15 @@ uint8_t* LogOut(uint8_t* _str, ...){
 }
 
 void LogOutCh(uint8_t ch){
-	HAL_UART_Transmit_IT(huart_log, &ch, 1);
+	uint8_t _ch[2];
+	_ch[0]=ch;
+	HAL_UART_Transmit(huart_log, _ch, 1,0x1ff);
 }
 
 void LogOutFix(uint8_t* pstr,uint16_t len){
-	HAL_UART_Transmit_IT(huart_log, pstr, len);
+	HAL_UART_Transmit(huart_log, pstr, len,0x1ff);
 }
 
 void LogOutStr(uint8_t* pstr){
-	HAL_UART_Transmit_IT(huart_log, pstr, strlen(pstr));
+	HAL_UART_Transmit(huart_log, pstr, strlen(pstr),0x1ff);
 }

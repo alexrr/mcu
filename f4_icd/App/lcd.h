@@ -62,6 +62,7 @@ void LCD_ini(I2C_HandleTypeDef *i2c_h,uint16_t i2c_address);
 void LCD_Clear(void);
 void LCD_SendChar(uint8_t ch);
 void LCD_String(uint8_t* st);
+void LCD_StringFmt(uint8_t* st,...);
 void LCD_SetPos(uint8_t x, uint8_t y);
 
 #endif /* LCD_H_ */

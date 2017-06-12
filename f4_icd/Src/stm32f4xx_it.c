@@ -94,8 +94,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-  HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
-  TIMx_IRQHandler_irdecode(&htim2);
+	  irq_src=1;
+	  HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+	  TIMx_IRQHandler_irdecode(&htim2);
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
@@ -161,23 +162,11 @@ void OTG_FS_IRQHandler(void)
 */
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-   HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
-   TIMx_IRQHandler_irdecode(htim);
-}
-
-/**
-* @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
-*/
-void TIM2_UP_TIM10_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-  HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
-  TIMx_IRQHandler_irdecode(&htim2);
-  /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim10);
-  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-
-  /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+	if (htim->Instance == ir_htim->Instance) {
+		irq_src = 3;
+		HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
+		TIMx_IRQHandler_irdecode(htim);
+	}
 }
 
 /* USER CODE END 1 */

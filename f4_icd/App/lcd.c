@@ -1,4 +1,5 @@
 #include "lcd.h"
+#include <stdarg.h>
 //------------------------------------------------
 uint8_t buf[1]={0};
 char str1[100];
@@ -69,6 +70,19 @@ void LCD_String(uint8_t* st)
 	{
 		sendbyte(st[i],1);
 		i++;
+	}
+}
+//------------------------------------------------
+void LCD_StringFmt(uint8_t* st,...)
+{
+	int slen;
+    va_list argptr;
+    va_start(argptr, st);
+    slen = vsprintf((char*)str1, (char*)st, argptr);
+    va_end(argptr);
+
+	for(uint8_t i=0;i<slen;i++){
+		sendbyte((uint8_t)str1[i],1);
 	}
 }
 //------------------------------------------------

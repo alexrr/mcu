@@ -8,6 +8,7 @@
 #include "Project_Lib.h"
 
 TIM_HandleTypeDef* ir_htim;
+__IO uint8_t irq_src=0;
 
 /* Logic table for rising edge: every line has values corresponding to previous bit.
  In columns are actual bit values for given bit time. */
@@ -139,6 +140,7 @@ static void IR_RC5_WriteBit(uint8_t bitVal) {
 		RC5TmpPacket.bitCount--;
 	} else {
 		RC5FrameReceived = YES;
+		LogOut("\n\rRecived IR:%x",RC5TmpPacket.data);
 	}
 }
 
@@ -168,17 +170,20 @@ static uint32_t TIM_GetCounterCLKValue(void) {
 #endif
 			) {
 		/* Get the clock prescaler of APB2 */
-		apbfrequency = HCLK_Frequency / RCC_ClkInitStruct.APB2CLKDivider;
+		//apbfrequency = HCLK_Frequency / RCC_ClkInitStruct.APB2CLKDivider;
+		apbfrequency = HAL_RCC_GetPCLK2Freq();
 		apbprescaler = RCC_ClkInitStruct.APB2CLKDivider;
 	} else if ((ir_htim->Instance == TIM2) || (ir_htim->Instance == TIM3)
 			|| (ir_htim->Instance == TIM4) || (ir_htim->Instance == TIM5)
 			|| (ir_htim->Instance == TIM6) || (ir_htim->Instance == TIM7)) {
 		/* Get the clock prescaler of APB1 */
-		apbfrequency = HCLK_Frequency / RCC_ClkInitStruct.APB1CLKDivider;
+		//apbfrequency = HCLK_Frequency / RCC_ClkInitStruct.APB1CLKDivider;
+		apbfrequency = HAL_RCC_GetPCLK1Freq();
 		apbprescaler = RCC_ClkInitStruct.APB1CLKDivider;
 	}
 
 	/* If APBx clock div >= 4   need apbfrequency * 2 */
+	LogOut("\n\rapbprescaler=%lu,apbfrequency=%lu,timprescaler=%lu",apbprescaler,apbfrequency, timprescaler);
 	if (apbprescaler >= 2) {
 		return ((apbfrequency * 2) / (timprescaler + 1));
 	} else {
@@ -252,26 +257,24 @@ void TIMx_IRQHandler_irdecode(TIM_HandleTypeDef *htim) {
 	BaseType_t xHigherPriorityTaskWoken;
 	xHigherPriorityTaskWoken = pdFALSE;
 	IC_val.Channel = 0;
-	IC_val.CR1 = 0;
+	IC_val.CR1 = irq_src;
 	IC_val.CR2 = 0;
 	IC_val.ICvalue = 0;
 
 	if (__HAL_TIM_GET_FLAG(htim,TIM_FLAG_CC1) != RESET) {
-		__HAL_TIM_CLEAR_FLAG(htim, TIM_FLAG_CC1);
 		ICValue2 = HAL_TIM_ReadCapturedValue(ir_htim, TIM_CHANNEL_1);
+		__HAL_TIM_CLEAR_FLAG(htim, TIM_FLAG_CC1);
 		IC_val.Channel = TIM_FLAG_CC1;
 		IC_val.ICvalue = ICValue2 - ICValue1;
-		IC_val.CR1 = ir_htim->Instance->CR1;
 		IC_val.CR2 = ir_htim->Instance->CR2;
 		IR_RC5_DataSampling(ICValue2 - ICValue1, 0);
 		xQueueSendFromISR(Queue_ir_cap, &IC_val, &xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	} else if (__HAL_TIM_GET_FLAG(htim,TIM_FLAG_CC2) != RESET) {
-		__HAL_TIM_CLEAR_FLAG(htim, TIM_FLAG_CC2);
 		ICValue1 = HAL_TIM_ReadCapturedValue(ir_htim, TIM_CHANNEL_2);
+		__HAL_TIM_CLEAR_FLAG(htim, TIM_FLAG_CC2);
 		IC_val.Channel = TIM_FLAG_CC2;
 		IC_val.ICvalue = ICValue1;
-		IC_val.CR1 = ir_htim->Instance->CR1;
 		IC_val.CR2 = ir_htim->Instance->CR2;
 		IR_RC5_DataSampling(ICValue2 - ICValue1, 0);
 		IR_RC5_DataSampling(ICValue1, 1);
@@ -408,19 +411,7 @@ void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim) {
 //
 //  /* Enable the timer */
 //  TIM_Cmd(IR_TIM, ENABLE);
-#ifdef USE_LCD
-//  /* Set the LCD Back Color */
-//  LCD_SetBackColor(LCD_COLOR_RED);
-//
-//  /* Set the LCD Text Color */
-//  LCD_SetTextColor(LCD_COLOR_GREEN);
-//  LCD_DisplayStringLine(LCD_LINE_0, "   STM32100E-EVAL   ");
-//  LCD_DisplayStringLine(LCD_LINE_1, " RC5 InfraRed Demo  ");
-//  LCD_SetBackColor(LCD_COLOR_BLUE);
-//
-//  /* Set the LCD Text Color */
-//  LCD_SetTextColor(LCD_COLOR_WHITE);
-#endif
+
 	HAL_GPIO_TogglePin(PCAP1_GPIO_Port, PCAP1_Pin);
 	uint8_t* pstr=LogOut("\n\r#RC5 init");
 
@@ -428,24 +419,20 @@ void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim) {
 
 	//TIMCLKValueKHz = HAL_RCC_GetHCLKFreq() / 1000;
     TIMCLKValueKHz = TIM_GetCounterCLKValue()/1000;
-
+    LogOut("\n\r TIMCLKValueKHz=%lu",TIMCLKValueKHz);
     RC5TimeOut = TIMCLKValueKHz * RC5_TIME_OUT_US / 1000;
+    LogOut("\n\r RC5TimeOut=%lu", RC5TimeOut);
 
-	ir_htim->Instance->ARR = RC5TimeOut*1000;
+	ir_htim->Instance->ARR = RC5TimeOut;
 	/* Bit time range */
 	RC5MinT = (RC5_T_US - RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5MaxT = (RC5_T_US + RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5Min2T = (2 * RC5_T_US - RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 	RC5Max2T = (2 * RC5_T_US + RC5_T_TOLERANCE_US) * TIMCLKValueKHz / 1000;
 
-    LogOut("\n\r RC5TimeOut=%d\n\r RC5MinT=%d RC5MaxT=%d\n\r RC5Min2T=%d  RC5Max2T=%d",RC5TimeOut,RC5MinT,RC5MaxT,RC5Min2T,RC5Max2T);
+    LogOut("\n\r RC5MinT=%u RC5MaxT=%u\n\r RC5Min2T=%u  RC5Max2T=%u",RC5MinT,RC5MaxT,RC5Min2T,RC5Max2T);
 
 	__HAL_TIM_CLEAR_FLAG(ir_htim, TIM_FLAG_UPDATE);
-	if (HAL_TIM_Base_Start_IT(ir_htim) != HAL_OK) {
-		/* Starting Error */
-		Error_Handler();
-	}
-
 
     if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_2) != HAL_OK) {
 		/* Starting Error */
@@ -454,6 +441,11 @@ void IR_RC5_Init(TIM_HandleTypeDef* _ir_htim) {
 
     /*##-5- Start the Input Capture in interrupt mode ##########################*/
 	if (HAL_TIM_IC_Start_IT(ir_htim, TIM_CHANNEL_1) != HAL_OK) {
+		/* Starting Error */
+		Error_Handler();
+	}
+
+	if (HAL_TIM_Base_Start_IT(ir_htim) != HAL_OK) {
 		/* Starting Error */
 		Error_Handler();
 	}
