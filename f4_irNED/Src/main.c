@@ -71,7 +71,7 @@ osThreadId defaultTaskHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-IR_handle_type_def nec;
+IR_handle_type_def *nec;
 
 /* USER CODE END PV */
 
@@ -96,20 +96,20 @@ void myNecDecodedCallback(uint16_t address, uint8_t cmd) {
     uint8_t *pstr=LogOut("A:%d C:%d\n", address, cmd);
 	LCD_SetPos(0,1);
 	LCD_String(pstr);
-    HAL_Delay(10);
-    NEC_Read(&nec);
+    osDelay(10);
+    NEC_Read(nec);
 }
 
 void myNecErrorCallback() {
 	LogOutStr("Error!\n");
     HAL_Delay(10);
-    NEC_Read(&nec);
+    NEC_Read(nec);
 }
 
 void myNecRepeatCallback() {
 	LogOutStr("Repeat!\n");
     HAL_Delay(10);
-    NEC_Read(&nec);
+    NEC_Read(nec);
 }
 
 
@@ -153,17 +153,17 @@ int main(void)
 	LCD_Clear();
 	LCD_SetPos(0,0);
 	LCD_String("Start!");
-	IR_handle_type_def *irh = Get_IR_handle();
+	nec = Get_IR_handle();
 
-	irh->IR_GPIO_PORT = GPIOA;
-	irh->IR_GPIO_PIN = GPIO_PIN_0;
-	irh->IR_DecodedCallback = myNecDecodedCallback;
-	irh->IR_ErrorCallback = myNecErrorCallback;
-	irh->IR_RepeatCallback = myNecRepeatCallback;
+	nec->IR_GPIO_PORT = GPIOA;
+	nec->IR_GPIO_PIN = GPIO_PIN_0;
+	nec->IR_DecodedCallback = myNecDecodedCallback;
+	nec->IR_ErrorCallback = myNecErrorCallback;
+	nec->IR_RepeatCallback = myNecRepeatCallback;
 	Init_IR(&htim2,NEC_DEC);
 
 	LogOutStr("Init complete!\r\n");
-    NEC_Read(&nec);
+    NEC_Read(nec);
 
   /* USER CODE END 2 */
 
