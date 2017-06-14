@@ -101,7 +101,7 @@ static IR_eventTypeDef event;
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	InsideISR = 1;
 
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	if (RFDemoStatus == RC5_DEC) {
 		/* - Timer Falling Edge Event:
 		 The Timer interrupt is used to measure the period between two
