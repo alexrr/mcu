@@ -22,7 +22,7 @@ void SetLogDev(){
 void InitLogDev(UART_HandleTypeDef* new_log_h){
 	huart_log = new_log_h;
 	__HAL_UART_ENABLE_IT(huart_log, UART_IT_RXNE);
-//	__HAL_UART_ENABLE_IT(huart_log, UART_IT_TXE);
+	__HAL_UART_ENABLE_IT(huart_log, UART_IT_TXE);
 
 }
 
@@ -33,7 +33,15 @@ uint8_t* LogOut(uint8_t* _str, ...){
     va_start(argptr, _str);
     slen = vsnprintf((char*)str_buf,MAX_strlen, (char*)_str, argptr);
     va_end(argptr);
-	HAL_UART_Transmit(huart_log, str_buf, slen,0x1ff);
+    if(slen>MAX_strlen){
+    	slen=MAX_strlen;
+    }
+    if(huart_log->hdmatx!=NULL){
+    	HAL_UART_Transmit_DMA(huart_log, str_buf, slen);
+    }
+    else{
+    	HAL_UART_Transmit(huart_log, str_buf, slen,0x1ff);
+    }
 	return str_buf;
 }
 
@@ -48,5 +56,11 @@ void LogOutFix(uint8_t* pstr,uint16_t len){
 }
 
 void LogOutStr(uint8_t* pstr){
-	HAL_UART_Transmit(huart_log, pstr, strlen(pstr),0x1ff);
+    if(huart_log->hdmatx!=NULL){
+    	HAL_UART_Transmit_DMA(huart_log, pstr, strlen(pstr));
+    }
+    else{
+    	HAL_UART_Transmit(huart_log, pstr, strlen(pstr),0x1ff);
+    }
+
 }
