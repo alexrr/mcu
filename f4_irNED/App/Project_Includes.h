@@ -11,8 +11,8 @@
 #include "task.h"
 #include "semphr.h"
 #include "lcd.h"
-#include "motor_cmd_exec.h"
-#include "ir_decode.h"
+//#include "motor_cmd_exec.h"
+//#include "ir_decode.h"
 #include "DateTime.h"
 #include <string.h>
 #include <stdio.h>

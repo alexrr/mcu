@@ -52,7 +52,7 @@
 
 /* USER CODE BEGIN Includes */
 #include <string.h>
-#include "NEC_Decode.h"
+#include "../App/Project_App.h"
 
 /* USER CODE END Includes */
 
@@ -71,7 +71,7 @@ osThreadId defaultTaskHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-NEC nec;
+IR_handle_type_def nec;
 
 /* USER CODE END PV */
 
@@ -92,8 +92,10 @@ void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN 0 */
 void myNecDecodedCallback(uint16_t address, uint8_t cmd) {
-    LogOut("A:%d\tC:%d\n", address, cmd);
-    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    uint8_t *pstr=LogOut("A:%d C:%d\n", address, cmd);
+	LCD_SetPos(0,1);
+	LCD_String(pstr);
     HAL_Delay(10);
     NEC_Read(&nec);
 }
@@ -110,11 +112,6 @@ void myNecRepeatCallback() {
     NEC_Read(&nec);
 }
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-    if (htim == &htim2) {
-        NEC_TIM_IC_CaptureCallback(&nec);
-    }
-}
 
 /* USER CODE END 0 */
 
@@ -150,19 +147,22 @@ int main(void)
   MX_I2C1_Init();
 
   /* USER CODE BEGIN 2 */
-    nec.timerHandle = &htim2;
+  	InitLogDev(&huart1);
+	LogOutStr("Start!\n\r");
+	LCD_ini(&hi2c1,0x7e);
+	LCD_Clear();
+	LCD_SetPos(0,0);
+	LCD_String("Start!");
+	IR_handle_type_def *irh = Get_IR_handle();
 
-    nec.timerChannel = TIM_CHANNEL_1;
-    nec.timerChannelActive = HAL_TIM_ACTIVE_CHANNEL_1;
+	irh->IR_GPIO_PORT = GPIOA;
+	irh->IR_GPIO_PIN = GPIO_PIN_0;
+	irh->IR_DecodedCallback = myNecDecodedCallback;
+	irh->IR_ErrorCallback = myNecErrorCallback;
+	irh->IR_RepeatCallback = myNecRepeatCallback;
+	Init_IR(&htim2,NEC_DEC);
 
-    nec.timingBitBoundary = 1680;
-    nec.timingAgcBoundary = 12500;
-    nec.type = NEC_NOT_EXTENDED;
-
-    nec.NEC_DecodedCallback = myNecDecodedCallback;
-    nec.NEC_ErrorCallback = myNecErrorCallback;
-    nec.NEC_RepeatCallback = myNecRepeatCallback;
-
+	LogOutStr("Init complete!\r\n");
     NEC_Read(&nec);
 
   /* USER CODE END 2 */
