@@ -99,8 +99,8 @@ IR_handle_type_def* Get_IR_handle(){
 
 void Init_IR(TIM_HandleTypeDef* htim,ProtoSelector_t ps){
 	IR_handle.timerHandle = htim;
-	IR_handle.ProteSelector = ps;
-	if(IR_handle.ProteSelector==NEC_DEC){
+	IR_handle.ProtSelector = ps;
+	if(IR_handle.ProtSelector==NEC_DEC){
 		NEC_Init(&IR_handle);
 	}
 }
@@ -117,7 +117,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 
 	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-	if(IR_handle.ProteSelector == NEC_DEC){
+	if(IR_handle.ProtSelector == NEC_DEC){
 	    if (htim == IR_handle.timerHandle) {
 	    	HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
 	        NEC_TIM_IC_CaptureCallback(&IR_handle);

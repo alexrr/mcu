@@ -84,7 +84,7 @@ typedef struct {
     __IO uint8_t recieved[4];
     __IO uint8_t bitCount;
 
-    __IO ProtoSelector_t ProteSelector;
+    __IO ProtoSelector_t ProtSelector;
 
     GPIO_TypeDef *IR_GPIO_PORT;     //   GPIOA                    /*!< Port which IR input is connected */
     uint16_t 	IR_GPIO_PIN;           // GPIO_PIN_0               /*!< Pin which IR is connected */
