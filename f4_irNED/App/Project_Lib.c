@@ -37,7 +37,7 @@ uint8_t* LogOut(uint8_t* _str, ...){
     	slen=MAX_strlen;
     }
     if(huart_log->hdmatx!=NULL){
-    	HAL_UART_Transmit_DMA(huart_log, str_buf, slen);
+    	HAL_UART_Transmit(huart_log, str_buf, slen,0x1ff);
     }
     else{
     	HAL_UART_Transmit(huart_log, str_buf, slen,0x1ff);
@@ -57,7 +57,7 @@ void LogOutFix(uint8_t* pstr,uint16_t len){
 
 void LogOutStr(uint8_t* pstr){
     if(huart_log->hdmatx!=NULL){
-    	HAL_UART_Transmit_DMA(huart_log, pstr, strlen(pstr));
+    	HAL_UART_Transmit(huart_log, pstr, strlen(pstr),0x1ff);
     }
     else{
     	HAL_UART_Transmit(huart_log, pstr, strlen(pstr),0x1ff);

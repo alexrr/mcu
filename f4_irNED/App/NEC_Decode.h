@@ -33,4 +33,8 @@ void NEC_TIM_IC_CaptureCallback(IR_handle_type_def* handle);
 
 void NEC_Read(IR_handle_type_def* handle);
 
+void SendData(IR_handle_type_def* handle);
+void SendRept(IR_handle_type_def* handle);
+void SendErr(IR_handle_type_def* handle);
+
 #endif /* INC_NEC_DECODE_H_ */

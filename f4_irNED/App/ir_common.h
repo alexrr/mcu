@@ -79,6 +79,8 @@ typedef enum
   NEC_DEC
 } ProtoSelector_t;
 
+
+
 typedef struct {
 	uint16_t rawTimerData[32];
     __IO uint8_t recieved[4];
@@ -100,7 +102,7 @@ typedef struct {
     __IO uint16_t timingAgcBoundary;
 
     void *ProtData;
-    void (*IR_DecodedCallback)(uint16_t, uint8_t);
+    void (*IR_DecodedCallback)(uint8_t*,uint8_t);
     void (*IR_ErrorCallback)();
     void (*IR_RepeatCallback)();
 } IR_handle_type_def;
@@ -109,8 +111,10 @@ extern IR_handle_type_def IR_handle;
 /**
   * @}
   */
+extern QueueHandle_t Queue_ir_data;
 IR_handle_type_def* Get_IR_handle();
 void Init_IR(TIM_HandleTypeDef* htim,ProtoSelector_t ps);
+void StartLoopIR(void const * argument);
 
 /** @defgroup IR_Common_Public_Constants
   * @{
@@ -167,7 +171,6 @@ extern __IO ProtoSelector_t IR_ProtoSelect;
 /** @defgroup IR_Common_Exported_Functions
   * @{
   */
-void SIRC_Encode_SignalGenerate(void);
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim);
 uint32_t TIM_GetCounterCLKValue(void);
 void TIM_ForcedOC1Config(uint32_t action);
@@ -183,13 +186,14 @@ void PrepareLogging();
 typedef enum
 {
     UnfilledSource = 0,
-	PeriodElapsedCallbackSource, /*1*/
-	CaptureCallbackSource,		/*2*/
-	DecodeFunSource,			/*3*/
-	ResetFunSource,				/*4*/
-	DataSamplingFunSource,		/*5*/
-	modifyLastBitFunSource,		/*6*/
-	WriteBitFunSource			/*7*/
+	ResultReadySource,			/*1*/
+	PeriodElapsedCallbackSource, /*2*/
+	CaptureCallbackSource,		/*3*/
+	DecodeFunSource,			/*4*/
+	ResetFunSource,				/*5*/
+	DataSamplingFunSource,		/*6*/
+	modifyLastBitFunSource,		/*7*/
+	WriteBitFunSource			/*8*/
 } IR_eventSource_enum;
 
 typedef struct

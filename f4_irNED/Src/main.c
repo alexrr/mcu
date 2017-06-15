@@ -72,7 +72,7 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 IR_handle_type_def *nec;
-
+osThreadId myEventLogTaskHandle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,25 +91,26 @@ void StartDefaultTask(void const * argument);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-void myNecDecodedCallback(uint16_t address, uint8_t cmd) {
+void myNecDecodedCallback(uint8_t* data, uint8_t len) {
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-    uint8_t *pstr=LogOut("A:%d C:%d\n", address, cmd);
+    LogOut("IR Code:");
 	LCD_SetPos(0,1);
-	LCD_String(pstr);
+    uint* pstr;
+    for(int i=0;i<len;i++){
+    	pstr = LogOut("%d ",data[i]);
+    	LCD_String(pstr);
+    }
     osDelay(10);
-    NEC_Read(nec);
 }
 
 void myNecErrorCallback() {
-	LogOutStr("Error!\n");
+	LogOutStr("Error!\n\r");
     HAL_Delay(10);
-    NEC_Read(nec);
 }
 
 void myNecRepeatCallback() {
-	LogOutStr("Repeat!\n");
+	LogOutStr("Repeat!\n\r");
     HAL_Delay(10);
-    NEC_Read(nec);
 }
 
 
@@ -186,6 +187,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  osThreadDef(myEventLogTask, StartLoopIR, osPriorityNormal, 0, 128);
+  myEventLogTaskHandle = osThreadCreate(osThread(myEventLogTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */

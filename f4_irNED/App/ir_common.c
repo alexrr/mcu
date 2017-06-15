@@ -97,11 +97,33 @@ IR_handle_type_def* Get_IR_handle(){
   return &IR_handle;
 }
 
+QueueHandle_t Queue_ir_data;
+
 void Init_IR(TIM_HandleTypeDef* htim,ProtoSelector_t ps){
 	IR_handle.timerHandle = htim;
 	IR_handle.ProtSelector = ps;
+	Queue_ir_data = xQueueCreate(10, sizeof(uint8_t[4]));
 	if(IR_handle.ProtSelector==NEC_DEC){
 		NEC_Init(&IR_handle);
+	}
+
+}
+
+void StartLoopIR(void const * argument){
+	BaseType_t xStatus;
+	uint8_t data[4];
+	for (;;) {
+		if (Queue_ir_data != NULL) {
+			while ((xStatus = xQueueReceive(Queue_ir_data, data,
+					portMAX_DELAY)) == pdPASS) {
+				IR_handle.IR_DecodedCallback(data,4);
+				osDelay(2);
+			}
+			if(IR_handle.ProtSelector==NEC_DEC){
+				NEC_Read(&IR_handle);
+			}
+		}
+		osDelay(1);
 	}
 }
 
@@ -237,6 +259,7 @@ void ir_HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
  * @param  None
  * @retval Timer clock
  */
+
 uint32_t TIM_GetCounterCLKValue(void) {
 	uint32_t apbprescaler = 0, apbfrequency = 0;
 	uint32_t timprescaler = 0;
@@ -269,19 +292,21 @@ void TIM_ForcedOC1Config(uint32_t action) {
 	TimHandleLF->Instance->CCMR1 = temporary;
 }
 
+
 /**
  * @}
  */
 uint8_t InsideISR = 0;
 QueueHandle_t Queue_ir_event = NULL;
 const uint8_t* eventSource_str[20] = { (uint8_t*) "UnfilledSource", /*  0 */
-(uint8_t*) "PeriodElapsedCB", /*  1 */
-(uint8_t*) "CaptureCB", /*  2 */
-(uint8_t*) "DecodeFun", /*  3 */
-(uint8_t*) "ResetFun", /*  4 */
-(uint8_t*) "DataSamplingFun", /*  5 */
-(uint8_t*) "modifyLastBitF", /*  6 */
-(uint8_t*) "WriteBitFun", /*  7 */
+(uint8_t*) "ResultReady",	 /*  1 */
+(uint8_t*) "PeriodElapsedCB", /* 2 */
+(uint8_t*) "CaptureCB", /*  3 */
+(uint8_t*) "DecodeFun", /*  4 */
+(uint8_t*) "ResetFun", /*  5 */
+(uint8_t*) "DataSamplingFun", /*  6 */
+(uint8_t*) "modifyLastBitF", /*  7 */
+(uint8_t*) "WriteBitFun", /*  6 */
 
 };
 

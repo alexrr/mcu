@@ -5,10 +5,13 @@
  *      Author: peter
  */
 
+#include "Project_Lib.h".h"
 #include "NEC_Decode.h"
 #include "ir_common.h"
 
 void NEC_TIM_IC_CaptureCallback(IR_handle_type_def* handle) {
+	uint8_t old_iISR=InsideISR;
+	InsideISR =1;
 	HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
     if (((NEC_ProtoData_TypeDef*)handle->ProtData)->state == NEC_INIT) {
 
@@ -16,7 +19,7 @@ void NEC_TIM_IC_CaptureCallback(IR_handle_type_def* handle) {
 
         if (handle->rawTimerData[1] < handle->timingAgcBoundary) {
         	((NEC_ProtoData_TypeDef*)handle->ProtData)->state = NEC_OK;
-            handle->IR_RepeatCallback();
+        	SendRept(handle);
         } else {
         	((NEC_ProtoData_TypeDef*)handle->ProtData)->state = NEC_AGC_OK;
             HAL_TIM_IC_Start_DMA(handle->timerHandle, handle->timerChannel1,
@@ -54,11 +57,41 @@ void NEC_TIM_IC_CaptureCallback(IR_handle_type_def* handle) {
         ((NEC_ProtoData_TypeDef*)handle->ProtData)->state = NEC_OK;
 
         if (valid)
-            handle->IR_DecodedCallback(handle->recieved[0], handle->recieved[2]);
+        	SendData(handle);
         else
-            handle->IR_ErrorCallback();
+        	SendErr(handle);
     }
+    InsideISR=old_iISR;
 }
+
+void SendData(IR_handle_type_def* handle){
+	if(InsideISR){
+		BaseType_t xHigherPriorityTaskWoken;
+		xHigherPriorityTaskWoken = pdFALSE;
+		xQueueSendFromISR(Queue_ir_data, handle->recieved, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	}
+	else{
+		handle->IR_DecodedCallback(handle->recieved,4);
+	}
+}
+
+void SendRept(IR_handle_type_def* handle){
+	handle->recieved[0]=0xff;
+	handle->recieved[1]=0xff;
+	handle->recieved[2]=0xff;
+	handle->recieved[3]=0xff;
+	SendData(handle);
+}
+
+void SendErr(IR_handle_type_def* handle){
+	handle->recieved[0]=0x00;
+	handle->recieved[1]=0x00;
+	handle->recieved[2]=0x00;
+	handle->recieved[3]=0x00;
+	SendData(handle);
+}
+
 
 void NEC_Read(IR_handle_type_def* handle) {
 	((NEC_ProtoData_TypeDef*)handle->ProtData)->state = NEC_INIT;
