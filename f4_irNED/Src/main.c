@@ -95,7 +95,7 @@ void myNecDecodedCallback(uint8_t* data, uint8_t len) {
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
     LogOut("IR Code:");
 	LCD_SetPos(0,1);
-    uint* pstr;
+    uint8_t* pstr;
     for(int i=0;i<len;i++){
     	pstr = LogOut("%d ",data[i]);
     	LCD_String(pstr);

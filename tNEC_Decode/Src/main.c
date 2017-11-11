@@ -41,6 +41,7 @@
 
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <sys\types.h>
 #include "NEC_Decode.h"
 /* USER CODE END Includes */
 
@@ -54,6 +55,8 @@ DMA_HandleTypeDef hdma_tim2_ch1;
 
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
+
+WWDG_HandleTypeDef hwwdg;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -73,6 +76,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_WWDG_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -165,6 +169,7 @@ int main(void)
   MX_RTC_Init();
   MX_TIM2_Init();
   MX_I2C1_Init();
+  MX_WWDG_Init();
 
   /* USER CODE BEGIN 2 */
 //  __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
@@ -388,6 +393,22 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* WWDG init function */
+static void MX_WWDG_Init(void)
+{
+
+  hwwdg.Instance = WWDG;
+  hwwdg.Init.Prescaler = WWDG_PRESCALER_1;
+  hwwdg.Init.Window = 64;
+  hwwdg.Init.Counter = 64;
+  hwwdg.Init.EWIMode = WWDG_EWI_DISABLE;
+  if (HAL_WWDG_Init(&hwwdg) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
